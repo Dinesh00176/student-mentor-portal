@@ -1,0 +1,41 @@
+.notif-bell { position: relative; }
+.notif-bell__trigger {
+  position: relative;
+  background: none; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm);
+  width: 36px; height: 36px; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.notif-bell__trigger:hover { background: var(--color-surface-sunken); }
+.notif-bell__badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--color-critical); color: #fff;
+  border-radius: 999px; font-size: 0.65rem; font-weight: 700;
+  min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+}
+.notif-bell__panel {
+  position: absolute; top: 44px; right: 0;
+  width: 300px; max-height: 380px; overflow-y: auto;
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  z-index: 50;
+}
+.notif-bell__header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.notif-bell__mark-all { background: none; border: none; color: var(--color-accent-strong); font-size: 0.78rem; font-weight: 600; }
+.notif-bell__list { display: flex; flex-direction: column; }
+.notif-bell__empty { padding: var(--space-4); color: var(--color-ink-muted); font-size: 0.85rem; margin: 0; }
+.notif-bell__item {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  width: 100%; text-align: left; background: none; border: none;
+  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border);
+  font-size: 0.83rem;
+}
+.notif-bell__item:hover { background: var(--color-surface-sunken); }
+.notif-bell__item--unread { background: var(--color-accent-tint); }
+.notif-bell__item--unread:hover { background: var(--color-accent-tint); filter: brightness(0.97); }
+.notif-bell__message { color: var(--color-ink); }
+.notif-bell__time { color: var(--color-ink-faint); font-size: 0.72rem; }

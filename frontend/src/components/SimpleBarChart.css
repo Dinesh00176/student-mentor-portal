@@ -1,0 +1,11 @@
+.simple-bar-chart__rows { display: flex; flex-direction: column; gap: var(--space-3); }
+.simple-bar-chart__row { display: grid; grid-template-columns: 130px 1fr 48px; align-items: center; gap: var(--space-3); }
+.simple-bar-chart__label { font-size: 0.82rem; color: var(--color-ink-muted); text-align: right; }
+.simple-bar-chart__track { background: var(--color-surface-sunken); border-radius: var(--radius-sm); height: 14px; overflow: hidden; }
+.simple-bar-chart__fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--duration-base) var(--ease-standard); }
+.simple-bar-chart__value { font-size: 0.8rem; font-weight: 700; text-align: right; }
+
+@media (max-width: 560px) {
+  .simple-bar-chart__row { grid-template-columns: 90px 1fr 40px; }
+  .simple-bar-chart__label { font-size: 0.75rem; }
+}

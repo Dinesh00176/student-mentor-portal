@@ -1,0 +1,67 @@
+/*
+  MentorPath design tokens.
+  Visual identity: "quiet institutional trust" - warm neutrals, one grounded
+  accent, desaturated status colors always paired with icon + label.
+  Deliberately NOT a generic SaaS dashboard palette (no purple/blue gradients,
+  no glassmorphism, no heavy shadows).
+*/
+:root {
+  /* Surfaces */
+  --color-bg: #faf7f2;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f2ede4;
+  --color-border: #e2dccf;
+  --color-border-strong: #cfc6b3;
+
+  /* Text */
+  --color-ink: #2b2a28;
+  --color-ink-muted: #63605a;
+  --color-ink-faint: #8b877e;
+
+  /* Accent (trust / stability) */
+  --color-accent: #2f6f62;
+  --color-accent-strong: #1f5348;
+  --color-accent-tint: #e4efec;
+
+  /* Status - desaturated, always paired with label/icon */
+  --color-stable: #3d7a4d;
+  --color-stable-tint: #e6f0e7;
+  --color-attention: #a8791f;
+  --color-attention-tint: #f6eddb;
+  --color-critical: #a13f36;
+  --color-critical-tint: #f5e4e1;
+
+  /* Feedback */
+  --color-error: #a13f36;
+  --color-error-tint: #f5e4e1;
+  --color-success: #3d7a4d;
+  --color-success-tint: #e6f0e7;
+
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Helvetica, Arial, sans-serif;
+  --font-serif-display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius - restrained, mostly flat */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --content-max-width: 1180px;
+}

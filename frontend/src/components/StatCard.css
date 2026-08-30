@@ -1,0 +1,14 @@
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-4);
+  min-width: 140px;
+}
+.stat-card--attention { border-left-color: var(--color-attention); }
+.stat-card--critical { border-left-color: var(--color-critical); }
+.stat-card--stable { border-left-color: var(--color-stable); }
+.stat-card__value { font-family: var(--font-serif-display); font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.stat-card__label { margin-top: 6px; font-size: 0.82rem; color: var(--color-ink-muted); }
+.stat-card__hint { margin-top: 4px; font-size: 0.75rem; color: var(--color-ink-faint); }
