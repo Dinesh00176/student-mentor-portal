@@ -1,0 +1,322 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+/* Sidebar */
+.app-shell__sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 50;
+  transition: transform var(--duration-base) var(--ease-spring);
+}
+
+.app-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-shell__brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-strong);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.02em;
+  box-shadow: 0 2px 4px rgba(15, 118, 110, 0.25);
+}
+
+.app-shell__brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__brand-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--color-ink);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.app-shell__brand-sub {
+  font-size: 0.7rem;
+  color: var(--color-ink-faint);
+  font-weight: 500;
+}
+
+.app-shell__nav {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-3);
+  gap: 3px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.app-shell__nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all var(--duration-fast) ease;
+  position: relative;
+  text-decoration: none !important;
+}
+
+.app-shell__nav-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-ink-faint);
+  transition: color var(--duration-fast) ease;
+}
+
+.app-shell__nav-link:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
+}
+
+.app-shell__nav-link:hover .app-shell__nav-icon {
+  color: var(--color-ink);
+}
+
+.app-shell__nav-link--active {
+  background: var(--color-accent-tint) !important;
+  color: var(--color-accent-strong) !important;
+  font-weight: 700;
+}
+
+.app-shell__nav-link--active .app-shell__nav-icon {
+  color: var(--color-accent);
+}
+
+.app-shell__nav-link--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+/* User Profile Section */
+.app-shell__user-card {
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-shell__user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-shell__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent-tint);
+  color: var(--color-accent-strong);
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-accent-border);
+  flex-shrink: 0;
+}
+
+.app-shell__user-details {
+  overflow: hidden;
+}
+
+.app-shell__user-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.app-shell__user-role-badge {
+  margin-top: 2px;
+}
+
+.app-shell__role-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  display: inline-block;
+}
+
+.app-shell__user-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.app-shell__action-link {
+  background: none;
+  border: none;
+  color: var(--color-accent-strong);
+  font-size: 0.765rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.app-shell__action-link:hover {
+  text-decoration: underline;
+}
+
+.app-shell__logout-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.app-shell__logout-btn:hover {
+  background: var(--color-critical-tint);
+  border-color: var(--color-critical-border);
+  color: var(--color-critical);
+}
+
+/* Main Layout */
+.app-shell__main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-shell__topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+}
+
+.app-shell__topbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.app-shell__greeting {
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+
+.app-shell__greeting strong {
+  color: var(--color-accent-strong);
+}
+
+.app-shell__topbar-date {
+  font-size: 0.75rem;
+  color: var(--color-ink-faint);
+}
+
+.app-shell__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-shell__mobile-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.app-shell__content {
+  flex: 1;
+  padding: var(--space-5) 0 var(--space-8);
+}
+
+.app-shell__backdrop {
+  display: none;
+}
+
+/* Responsive Styles */
+@media (max-width: 900px) {
+  .app-shell__mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-2);
+  }
+
+  .app-shell__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+    z-index: 300;
+  }
+
+  .app-shell__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .app-shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 250;
+  }
+}
