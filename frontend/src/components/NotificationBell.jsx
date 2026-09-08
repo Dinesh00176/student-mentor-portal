@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { listNotifications, markNotificationRead } from '../services/notification.service';
+import { useNavigate } from 'react-router-dom';
+import { listNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notification.service';
+import { useAuth } from '../hooks/useAuth';
 import './NotificationBell.css';
 
 export default function NotificationBell() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,9 +40,45 @@ export default function NotificationBell() {
   };
 
   const handleMarkAllRead = async () => {
-    const unread = items.filter((n) => !n.isRead);
-    await Promise.all(unread.map((n) => markNotificationRead(n._id)));
-    setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+      setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      // Fallback
+      const unread = items.filter((n) => !n.isRead);
+      await Promise.all(unread.map((n) => markNotificationRead(n._id)));
+      setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    }
+  };
+
+  const handleNotificationClick = async (n) => {
+    if (!n.isRead) {
+      handleMarkRead(n._id);
+    }
+    setOpen(false);
+
+    const studentId = n.relatedStudent?._id || n.relatedStudent;
+    if (studentId) {
+      if (user?.role === 'mentor') {
+        navigate(`/mentor/students/${studentId}`);
+        return;
+      }
+      if (user?.role === 'admin') {
+        navigate(`/admin/students/${studentId}`);
+        return;
+      }
+      if (user?.role === 'student') {
+        navigate('/student/profile');
+        return;
+      }
+    }
+
+    const msg = (n.message || '').toLowerCase();
+    if (msg.includes('meeting') || msg.includes('appointment')) {
+      if (user?.role === 'mentor') navigate('/mentor/appointments');
+      else if (user?.role === 'counselor') navigate('/counselor/appointments');
+      else if (user?.role === 'student') navigate('/student/appointments');
+    }
   };
 
   return (
@@ -101,7 +141,7 @@ export default function NotificationBell() {
                   key={n._id}
                   type="button"
                   className={`notif-bell__item ${n.isRead ? '' : 'notif-bell__item--unread'}`}
-                  onClick={() => !n.isRead && handleMarkRead(n._id)}
+                  onClick={() => handleNotificationClick(n)}
                 >
                   <div className="notif-bell__item-dot" aria-hidden="true" />
                   <div className="notif-bell__item-content">

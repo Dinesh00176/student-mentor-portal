@@ -8,10 +8,12 @@ import { useToast } from '../../components/Toast';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import { Field, Input, Select } from '../../components/FormField';
+import BulkImportModal from './BulkImportModal';
 
 export default function AdminStudents() {
   const { push } = useToast();
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -45,12 +47,22 @@ export default function AdminStudents() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+        <Button variant="secondary" onClick={() => setShowImportModal(true)}>
+          📥 Import Students CSV
+        </Button>
         <Button onClick={() => setShowModal(true)}>
           + Enroll New Student
         </Button>
       </div>
       <StudentList key={refreshKey} basePath="/admin/students" />
+
+      {showImportModal && (
+        <BulkImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
 
       {showModal && (
         <Modal title="Enroll New Student" onClose={() => setShowModal(false)} size="md">

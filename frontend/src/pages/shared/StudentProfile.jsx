@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStudent, getStudentAttention, deactivateStudent } from '../../services/student.service';
-import { generateProgressSummary } from '../../services/ai.service';
+import { generateProgressSummary, generateMeetingPrep } from '../../services/ai.service';
 import { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
@@ -44,11 +44,14 @@ export default function StudentProfile() {
   const [error, setError] = useState('');
   const [aiSummary, setAiSummary] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [meetingPrep, setMeetingPrep] = useState(null);
+  const [prepLoading, setPrepLoading] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
-  const canEdit = user.role === 'mentor' || user.role === 'admin';
+  const isAssignedMentor = user.role === 'mentor' && (String(student?.assignedMentor?._id || student?.assignedMentor) === String(user._id));
+  const canEdit = user.role === 'admin' || isAssignedMentor;
   const canSeeAttention = user.role === 'mentor' || user.role === 'admin';
   const isAdmin = user.role === 'admin';
 
@@ -81,6 +84,18 @@ export default function StudentProfile() {
     }
   };
 
+  const handleGenerateMeetingPrep = async () => {
+    setPrepLoading(true);
+    try {
+      const { data } = await generateMeetingPrep(id);
+      setMeetingPrep(data.data);
+    } catch (err) {
+      push(getErrorMessage(err), 'error');
+    } finally {
+      setPrepLoading(false);
+    }
+  };
+
   const handleDeactivate = async () => {
     try {
       await deactivateStudent(id);
@@ -106,8 +121,8 @@ export default function StudentProfile() {
         <p>Overview is limited for this role.</p>
       ),
     },
-    { id: 'academic', label: 'Academic', content: <AcademicTab studentId={id} /> },
-    { id: 'attendance', label: 'Attendance', content: <AttendanceTab studentId={id} /> },
+    { id: 'academic', label: 'Academic', content: <AcademicTab studentId={id} canEdit={canEdit} onDataChanged={load} /> },
+    { id: 'attendance', label: 'Attendance', content: <AttendanceTab studentId={id} canEdit={canEdit} onDataChanged={load} /> },
     { id: 'counseling', label: 'Counseling', content: <CounselingTab studentId={id} canCreate={canEdit} /> },
     { id: 'remarks', label: 'Remarks', content: <RemarksTab studentId={id} canCreate={user.role === 'mentor'} /> },
     { id: 'interventions', label: 'Interventions', content: <InterventionsTab studentId={id} canManage={canEdit} /> },
@@ -141,14 +156,24 @@ export default function StudentProfile() {
 
         <div className="profile-header__actions">
           {(user.role === 'mentor' || isAdmin) && (
-            <Button
-              size="sm"
-              variant="secondary"
-              loading={aiLoading}
-              onClick={handleGenerateSummary}
-            >
-              ✨ Generate AI Summary
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={aiLoading}
+                onClick={handleGenerateSummary}
+              >
+                ✨ Generate AI Summary
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={prepLoading}
+                onClick={handleGenerateMeetingPrep}
+              >
+                📋 Meeting Prep Brief
+              </Button>
+            </>
           )}
           {isAdmin && (
             <>
@@ -258,6 +283,142 @@ export default function StudentProfile() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-3)', paddingTop: 'var(--space-2)', borderTop: '1px dashed var(--color-border)', fontSize: '0.78rem', color: 'var(--color-ink-faint)' }}>
               <span>{aiSummary.label || 'AI-generated — review before institutional use.'}</span>
               {aiSummary.followUpInterval && <span><strong>Suggested Follow-up Window:</strong> {aiSummary.followUpInterval}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {meetingPrep && (
+        <div
+          className="record-card"
+          style={{
+            marginBottom: 'var(--space-5)',
+            borderLeft: '4px solid var(--color-teal, #0d9488)',
+            background: 'linear-gradient(180deg, rgba(13, 148, 136, 0.06) 0%, var(--color-surface) 100%)',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <div
+            className="record-card__title-row"
+            style={{ paddingBottom: 'var(--space-2)', borderBottom: '1px solid var(--color-border)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <strong style={{ color: '#0f766e', fontSize: '1rem' }}>📋 1-on-1 Meeting Preparation Brief</strong>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  background: 'var(--color-surface)',
+                  border: '1px solid #99f6e4',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  color: '#0f766e',
+                  fontWeight: 600,
+                }}
+              >
+                {meetingPrep.provider || 'Academic Intelligence Engine'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  navigator.clipboard.writeText(meetingPrep.meetingBrief || '');
+                  push('Meeting Brief copied to clipboard.');
+                }}
+              >
+                📋 Copy Brief
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setMeetingPrep(null)}
+              >
+                ✕ Dismiss
+              </Button>
+            </div>
+          </div>
+
+          <div className="record-card__body" style={{ marginTop: 'var(--space-3)', lineHeight: 1.6 }}>
+            {meetingPrep.focusAreas && meetingPrep.focusAreas.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--color-critical)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  🎯 Key Focus Areas
+                </h4>
+                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--color-ink)' }}>
+                  {meetingPrep.focusAreas.map((fa, idx) => (
+                    <li key={idx} style={{ marginBottom: 4 }}>{fa}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {meetingPrep.pastActionReview && (
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  🔄 Prior Follow-up Review
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: 'var(--color-ink)' }}>{meetingPrep.pastActionReview}</p>
+              </div>
+            )}
+
+            {meetingPrep.suggestedQuestions && meetingPrep.suggestedQuestions.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  💬 Suggested Discussion Agenda &amp; Questions
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {meetingPrep.suggestedQuestions.map((q, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'var(--color-surface)',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        borderLeft: '3px solid #0d9488',
+                        fontStyle: 'italic',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {q}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {meetingPrep.targetCommitments && meetingPrep.targetCommitments.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--color-accent-strong)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  📝 Target Agreed Commitments
+                </h4>
+                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--color-ink)' }}>
+                  {meetingPrep.targetCommitments.map((tc, idx) => (
+                    <li key={idx} style={{ marginBottom: 4 }}>{tc}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {!meetingPrep.focusAreas && (
+              <div style={{ whiteSpace: 'pre-wrap', color: 'var(--color-ink)' }}>
+                {meetingPrep.meetingBrief}
+              </div>
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 'var(--space-3)',
+                paddingTop: 'var(--space-2)',
+                borderTop: '1px dashed var(--color-border)',
+                fontSize: '0.78rem',
+                color: 'var(--color-ink-faint)',
+              }}
+            >
+              <span>{meetingPrep.label || 'Advisory guidance only — faculty judgment applies.'}</span>
             </div>
           </div>
         </div>
