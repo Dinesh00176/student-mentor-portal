@@ -21,4 +21,9 @@ const markNotificationRead = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, notification, 'Notification marked as read.');
 });
 
-module.exports = { listNotifications, markNotificationRead };
+const markAllNotificationsRead = asyncHandler(async (req, res) => {
+  await Notification.updateMany({ user: req.user._id, isRead: false }, { isRead: true });
+  sendSuccess(res, 200, null, 'All notifications marked as read.');
+});
+
+module.exports = { listNotifications, markNotificationRead, markAllNotificationsRead };

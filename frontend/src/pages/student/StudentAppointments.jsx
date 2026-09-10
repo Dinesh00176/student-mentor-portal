@@ -36,6 +36,10 @@ export default function StudentAppointments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!mentor?._id) {
+      push('You do not have an assigned faculty mentor yet. Please contact your department head.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       await createAppointment({ withUser: mentor._id, reason: form.reason, preferredDate: form.preferredDate });

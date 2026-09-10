@@ -3,14 +3,16 @@
  * This is explicitly NOT a predictive or diagnostic AI system - every reason
  * returned here is derived from a plain, explainable, measurable rule.
  */
-const { summarizeAttendance, THRESHOLDS: ATT_THRESHOLDS } = require('./attendanceCalculator');
+const { summarizeAttendance } = require('./attendanceCalculator');
 const { computeSemesterGPA } = require('./gpaCalculator');
+const { INSTITUTIONAL_RULES } = require('../config/institutionalRules');
 
 const RULES = {
-  LOW_GPA: 5.5, // gradePoint scale 0-10
-  CRITICAL_ATTENDANCE: ATT_THRESHOLDS.ATTENTION_MIN, // below this = flagged
+  LOW_GPA: INSTITUTIONAL_RULES.ACADEMIC.LOW_GPA,
+  CRITICAL_ATTENDANCE: INSTITUTIONAL_RULES.ATTENDANCE.ATTENTION_MIN,
   MAX_OPEN_INTERVENTIONS_FOR_STABLE: 0,
-  REPEATED_FOLLOWUPS: 2, // 2+ overdue/completed follow-ups in recent history
+  REPEATED_FOLLOWUPS: INSTITUTIONAL_RULES.FOLLOWUP.REPEATED_THRESHOLD,
+  FOLLOWUP_RECENT_DAYS: INSTITUTIONAL_RULES.FOLLOWUP.RECENT_DAYS,
 };
 
 /**
@@ -45,18 +47,27 @@ function evaluateStudentAttention({ attendanceRecords = [], academicRecords = []
     score += arrearCount >= 2 ? 2 : 1;
   }
 
-  const openInterventions = interventions.filter((i) => ['Open', 'In Progress', 'Follow-up'].includes(i.status));
+  const openInterventions = interventions.filter((i) =>
+    INSTITUTIONAL_RULES.INTERVENTIONS.ACTIVE_STATUSES.includes(i.status)
+  );
   if (openInterventions.length > 0) {
     reasons.push(`${openInterventions.length} active intervention(s) in progress.`);
     score += 1;
   }
 
-  const recentFollowUps = followUps.filter((f) => f.status === 'Overdue' || f.status === 'Completed');
+  // Follow-ups: bound evaluation to the last 60 days to prevent historical penalty
+  const cutoffDate = new Date(Date.now() - RULES.FOLLOWUP_RECENT_DAYS * 24 * 60 * 60 * 1000);
+  const recentWindowFollowUps = followUps.filter((f) => {
+    const fDate = f.dueDate || f.createdAt || f.updatedAt;
+    return fDate ? new Date(fDate) >= cutoffDate : true;
+  });
+
+  const recentFollowUps = recentWindowFollowUps.filter((f) => f.status === 'Overdue' || f.status === 'Completed');
   if (recentFollowUps.length >= RULES.REPEATED_FOLLOWUPS) {
-    reasons.push(`Repeated follow-up requirement (${recentFollowUps.length} recent follow-ups).`);
+    reasons.push(`Repeated follow-up requirement (${recentFollowUps.length} follow-ups in the last ${RULES.FOLLOWUP_RECENT_DAYS} days).`);
     score += 1;
   }
-  const overdueFollowUps = followUps.filter((f) => f.status === 'Overdue');
+  const overdueFollowUps = recentWindowFollowUps.filter((f) => f.status === 'Overdue');
   if (overdueFollowUps.length > 0) {
     reasons.push(`${overdueFollowUps.length} overdue follow-up(s).`);
     score += 1;

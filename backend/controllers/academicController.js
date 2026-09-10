@@ -3,18 +3,14 @@ const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/apiResponse');
 const AcademicRecord = require('../models/AcademicRecord');
 const Student = require('../models/Student');
-const { assertMentorOwnsStudent, assertSelf } = require('../services/ownership');
+const { assertCanAccessStudent, assertMentorOwnsStudent, assertSelf } = require('../services/ownership');
 const { computeSemesterGPA, computeCGPA, computeSemesterTrend } = require('../services/gpaCalculator');
 
 // GET /api/academic/student/:studentId?semester=
 const getStudentAcademics = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
   const { semester } = req.query;
-  const student = await Student.findById(studentId).populate('user', '_id');
-  if (!student) throw new ApiError(404, 'Student not found.');
-
-  if (req.user.role === 'mentor') await assertMentorOwnsStudent(req.user, studentId);
-  if (req.user.role === 'student') assertSelf(req.user, student.user?._id);
+  await assertCanAccessStudent(req.user, studentId);
 
   const filter = { student: studentId };
   if (semester) filter.semester = Number(semester);

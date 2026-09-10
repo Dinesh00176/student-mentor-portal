@@ -50,10 +50,12 @@ export default function StudentProfile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
-  const isAssignedMentor = user.role === 'mentor' && (String(student?.assignedMentor?._id || student?.assignedMentor) === String(user._id));
-  const canEdit = user.role === 'admin' || isAssignedMentor;
-  const canSeeAttention = user.role === 'mentor' || user.role === 'admin';
-  const isAdmin = user.role === 'admin';
+  const currentUserId = user?._id || user?.id;
+  const assignedMentorId = student?.assignedMentor?._id || student?.assignedMentor;
+  const isAssignedMentor = user?.role === 'mentor' && Boolean(assignedMentorId) && String(assignedMentorId) === String(currentUserId);
+  const canEdit = user?.role === 'admin' || isAssignedMentor;
+  const canSeeAttention = user?.role === 'mentor' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const load = () => {
     setLoading(true);
@@ -121,10 +123,10 @@ export default function StudentProfile() {
         <p>Overview is limited for this role.</p>
       ),
     },
-    { id: 'academic', label: 'Academic', content: <AcademicTab studentId={id} canEdit={canEdit} onDataChanged={load} /> },
-    { id: 'attendance', label: 'Attendance', content: <AttendanceTab studentId={id} canEdit={canEdit} onDataChanged={load} /> },
+    { id: 'academic', label: 'Academic', content: <AcademicTab studentId={id} canEdit={isAssignedMentor} onDataChanged={load} /> },
+    { id: 'attendance', label: 'Attendance', content: <AttendanceTab studentId={id} canEdit={isAssignedMentor} onDataChanged={load} /> },
     { id: 'counseling', label: 'Counseling', content: <CounselingTab studentId={id} canCreate={canEdit} /> },
-    { id: 'remarks', label: 'Remarks', content: <RemarksTab studentId={id} canCreate={user.role === 'mentor'} /> },
+    { id: 'remarks', label: 'Remarks', content: <RemarksTab studentId={id} canCreate={isAssignedMentor} /> },
     { id: 'interventions', label: 'Interventions', content: <InterventionsTab studentId={id} canManage={canEdit} /> },
     { id: 'activity', label: 'Activity', content: <ActivityTab studentId={id} /> },
   ];

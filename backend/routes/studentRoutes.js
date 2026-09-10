@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  listStudents, getStudent, createStudent, updateStudent, deactivateStudent, assignMentor, getStudentAttention,
+  listStudents, getStudent, createStudent, updateStudent, deactivateStudent, assignMentor, bulkImportStudents, getStudentAttention,
 } = require('../controllers/studentController');
 const { getStudentActivity } = require('../controllers/activityController');
 const { verifyToken } = require('../middleware/auth');
@@ -12,6 +12,7 @@ const router = express.Router();
 
 router.get('/', verifyToken, requireRole('admin', 'mentor'), listStudents);
 router.post('/', verifyToken, requireRole('admin'), createStudentValidators, validate, createStudent);
+router.post('/bulk-import', verifyToken, requireRole('admin'), bulkImportStudents);
 router.get('/:id', verifyToken, getStudent);
 router.put('/:id', verifyToken, requireRole('admin'), updateStudent);
 router.delete('/:id', verifyToken, requireRole('admin'), deactivateStudent);

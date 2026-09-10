@@ -86,6 +86,12 @@ export default function CounselorDashboard() {
           tone={data.pendingAppointments > 0 ? 'attention' : 'stable'}
           trend="Inbox"
         />
+        <StatCard
+          label="Pending Follow-ups"
+          value={data.pendingFollowUpsCount || 0}
+          tone={(data.pendingFollowUpsCount || 0) > 0 ? 'attention' : 'stable'}
+          trend="Action required"
+        />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>

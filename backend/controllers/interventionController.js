@@ -4,7 +4,9 @@ const { sendSuccess } = require('../utils/apiResponse');
 const { getPagination, buildPaginatedResponse } = require('../utils/pagination');
 const Intervention = require('../models/Intervention');
 const Student = require('../models/Student');
-const { assertMentorOwnsStudent, assertSelf } = require('../services/ownership');
+const User = require('../models/User');
+const { INSTITUTIONAL_RULES } = require('../config/institutionalRules');
+const { assertMentorOwnsStudent, assertCounselorAuthorizedForStudent, assertSelf } = require('../services/ownership');
 const { logAudit } = require('../services/auditLog.service');
 const { notify } = require('../services/notify.service');
 
@@ -18,24 +20,35 @@ const listInterventions = asyncHandler(async (req, res) => {
   if (req.user.role === 'mentor') {
     const myStudents = await Student.find({ assignedMentor: req.user._id }).select('_id');
     filter.student = { $in: myStudents.map((s) => s._id) };
-  }
-  if (req.user.role === 'counselor') {
+    if (student) {
+      await assertMentorOwnsStudent(req.user, student);
+      filter.student = student;
+    }
+  } else if (req.user.role === 'counselor') {
     filter.assignedTo = req.user._id;
-  }
-  if (req.user.role === 'student') {
+    if (student) {
+      await assertCounselorAuthorizedForStudent(req.user, student);
+      filter.student = student;
+    }
+  } else if (req.user.role === 'student') {
     const me = await Student.findOne({ user: req.user._id });
     if (!me) throw new ApiError(404, 'Student profile not found.');
     filter.student = me._id;
-  }
-  if (student) {
-    if (req.user.role === 'mentor') await assertMentorOwnsStudent(req.user, student);
+  } else if (student) {
     filter.student = student;
   }
 
   const [items, total] = await Promise.all([
     Intervention.find(filter)
-      .populate('student', 'studentCode')
-      .populate('assignedTo', 'name role')
+      .populate({
+        path: 'student',
+        select: 'studentCode department user',
+        populate: [
+          { path: 'user', select: 'name email' },
+          { path: 'department', select: 'name code' },
+        ],
+      })
+      .populate('assignedTo', 'name role email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
@@ -49,12 +62,24 @@ const listInterventions = asyncHandler(async (req, res) => {
 const createIntervention = asyncHandler(async (req, res) => {
   const { student, problemIdentified, interventionType, actionTaken, assignedTo, followUpDate, notes } = req.body;
   if (!student || !problemIdentified) throw new ApiError(400, 'student and problemIdentified are required.');
+
+  const studentDoc = await Student.findById(student);
+  if (!studentDoc) throw new ApiError(404, 'Student not found.');
+
   if (req.user.role === 'mentor') await assertMentorOwnsStudent(req.user, student);
+  if (req.user.role === 'counselor') await assertCounselorAuthorizedForStudent(req.user, student);
+
+  if (assignedTo) {
+    const assignee = await User.findById(assignedTo);
+    if (!assignee || !INSTITUTIONAL_RULES.INTERVENTIONS.ALLOWED_ROLES_FOR_ASSIGNMENT.includes(assignee.role) || assignee.status !== 'active') {
+      throw new ApiError(400, 'Assigned user must be an active mentor, counselor, or administrator.');
+    }
+  }
 
   const intervention = await Intervention.create({
     student,
     problemIdentified,
-    interventionType,
+    interventionType: interventionType || 'Academic Support',
     actionTaken,
     assignedTo: assignedTo || req.user._id,
     followUpDate,
@@ -67,8 +92,7 @@ const createIntervention = asyncHandler(async (req, res) => {
     details: problemIdentified.slice(0, 120),
   });
 
-  const studentDoc = await Student.findById(student).select('assignedMentor studentCode');
-  if (studentDoc?.assignedMentor && String(studentDoc.assignedMentor) !== String(req.user._id)) {
+  if (studentDoc.assignedMentor && String(studentDoc.assignedMentor) !== String(req.user._id)) {
     await notify({
       user: studentDoc.assignedMentor, type: 'General', relatedStudent: student,
       message: `A new intervention was created for ${studentDoc.studentCode}.`,
@@ -81,7 +105,7 @@ const createIntervention = asyncHandler(async (req, res) => {
 // PATCH /api/interventions/:id/status
 const updateInterventionStatus = asyncHandler(async (req, res) => {
   const { status, note, outcome, actionTaken } = req.body;
-  const validStatuses = ['Open', 'In Progress', 'Follow-up', 'Resolved', 'Closed'];
+  const validStatuses = [...INSTITUTIONAL_RULES.INTERVENTIONS.ACTIVE_STATUSES, ...INSTITUTIONAL_RULES.INTERVENTIONS.TERMINAL_STATUSES];
   if (!status || !validStatuses.includes(status)) {
     throw new ApiError(400, `status must be one of: ${validStatuses.join(', ')}`);
   }

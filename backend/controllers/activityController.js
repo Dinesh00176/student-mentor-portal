@@ -7,16 +7,12 @@ const MentorRemark = require('../models/MentorRemark');
 const Intervention = require('../models/Intervention');
 const FollowUp = require('../models/FollowUp');
 const AttendanceRecord = require('../models/AttendanceRecord');
-const { assertMentorOwnsStudent, assertSelf } = require('../services/ownership');
+const { assertCanAccessStudent } = require('../services/ownership');
 
 // GET /api/students/:id/activity - a derived, read-only chronological feed
 const getStudentActivity = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const student = await Student.findById(id).populate('user', '_id');
-  if (!student) throw new ApiError(404, 'Student not found.');
-
-  if (req.user.role === 'mentor') await assertMentorOwnsStudent(req.user, id);
-  if (req.user.role === 'student') assertSelf(req.user, student.user?._id);
+  await assertCanAccessStudent(req.user, id);
 
   const [sessions, remarks, interventions, followUps] = await Promise.all([
     CounselingSession.find({ student: id }).select('date status sessionType reason'),

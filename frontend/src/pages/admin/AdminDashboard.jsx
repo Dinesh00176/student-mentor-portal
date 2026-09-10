@@ -51,22 +51,22 @@ export default function AdminDashboard() {
       {/* Primary KPI Overview */}
       <div className="grid-cards" style={{ marginBottom: 'var(--space-4)' }}>
         <StatCard
-          label="Total Active Students"
-          value={data.totalStudents}
+          label="Active Students"
+          value={data.activeStudentsCount ?? data.totalStudents}
           tone="accent"
-          trend="Enrolled"
+          trend={`${data.inactiveStudentsCount || 0} inactive`}
         />
         <StatCard
           label="Faculty Mentors"
-          value={data.totalMentors}
+          value={data.activeMentorsCount ?? data.totalMentors}
           tone="accent"
-          trend="Active"
+          trend={`${data.totalMentors || 0} registered`}
         />
         <StatCard
           label="Wellness Counselors"
-          value={data.totalCounselors}
+          value={data.activeCounselorsCount ?? data.totalCounselors}
           tone="accent"
-          trend="Active"
+          trend={`${data.totalCounselors || 0} registered`}
         />
         <StatCard
           label="Active Interventions"

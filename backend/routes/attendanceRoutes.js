@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  getStudentAttendance, createAttendanceRecord, updateAttendanceRecord,
+  getStudentAttendance, createAttendanceRecord, updateAttendanceRecord, deleteAttendanceRecord,
 } = require('../controllers/attendanceController');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
@@ -10,7 +10,8 @@ const { createAttendanceValidators } = require('../validators/attendance.validat
 const router = express.Router();
 
 router.get('/student/:studentId', verifyToken, getStudentAttendance);
-router.post('/', verifyToken, requireRole('admin', 'mentor'), createAttendanceValidators, validate, createAttendanceRecord);
-router.put('/:id', verifyToken, requireRole('admin', 'mentor'), updateAttendanceRecord);
+router.post('/', verifyToken, requireRole('mentor'), createAttendanceValidators, validate, createAttendanceRecord);
+router.put('/:id', verifyToken, requireRole('mentor'), updateAttendanceRecord);
+router.delete('/:id', verifyToken, requireRole('mentor'), deleteAttendanceRecord);
 
 module.exports = router;

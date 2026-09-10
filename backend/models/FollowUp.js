@@ -18,5 +18,6 @@ const followUpSchema = new mongoose.Schema(
 
 followUpSchema.index({ status: 1, dueDate: 1 });
 followUpSchema.index({ student: 1 });
+followUpSchema.index({ student: 1, status: 1 });
 
 module.exports = mongoose.model('FollowUp', followUpSchema);

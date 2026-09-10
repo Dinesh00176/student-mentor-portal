@@ -6,7 +6,7 @@ const { requireRole } = require('../middleware/rbac');
 const router = express.Router();
 
 router.get('/student/:studentId', verifyToken, getStudentRemarks);
-router.post('/', verifyToken, requireRole('admin', 'mentor'), createRemark);
-router.put('/:id', verifyToken, requireRole('admin', 'mentor'), updateRemark);
+router.post('/', verifyToken, requireRole('mentor'), createRemark);
+router.put('/:id', verifyToken, requireRole('mentor'), updateRemark);
 
 module.exports = router;

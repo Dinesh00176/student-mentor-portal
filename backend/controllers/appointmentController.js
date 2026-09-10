@@ -4,6 +4,7 @@ const { sendSuccess } = require('../utils/apiResponse');
 const Appointment = require('../models/Appointment');
 const Student = require('../models/Student');
 const User = require('../models/User');
+const { INSTITUTIONAL_RULES } = require('../config/institutionalRules');
 const { notify } = require('../services/notify.service');
 const { logAudit } = require('../services/auditLog.service');
 
@@ -25,7 +26,14 @@ const listAppointments = asyncHandler(async (req, res) => {
   }
 
   const appointments = await Appointment.find(filter)
-    .populate('student', 'studentCode')
+    .populate({
+      path: 'student',
+      select: 'studentCode department user',
+      populate: [
+        { path: 'user', select: 'name email' },
+        { path: 'department', select: 'name code' },
+      ],
+    })
     .populate('requestedBy', 'name role')
     .populate('withUser', 'name role')
     .sort({ preferredDate: 1 });
@@ -48,8 +56,23 @@ const createAppointment = asyncHandler(async (req, res) => {
   if (recipient.role === 'mentor' && String(me.assignedMentor) !== String(recipient._id)) {
     throw new ApiError(403, 'You may only request meetings with your assigned mentor.');
   }
-  if (new Date(preferredDate) < new Date()) {
+  const targetDate = new Date(preferredDate);
+  if (targetDate < new Date()) {
     throw new ApiError(400, 'Preferred date must be in the future.');
+  }
+
+  // Check conflict with existing confirmed appointments for the recipient
+  const windowMs = INSTITUTIONAL_RULES.APPOINTMENTS.CONFLICT_WINDOW_MINUTES * 60 * 1000;
+  const conflict = await Appointment.findOne({
+    withUser,
+    status: 'Confirmed',
+    confirmedDate: {
+      $gte: new Date(targetDate.getTime() - windowMs),
+      $lte: new Date(targetDate.getTime() + windowMs),
+    },
+  });
+  if (conflict) {
+    throw new ApiError(409, `The requested faculty already has a confirmed appointment within ${INSTITUTIONAL_RULES.APPOINTMENTS.CONFLICT_WINDOW_MINUTES} minutes of this time slot. Please choose another time.`);
   }
 
   const appointment = await Appointment.create({
@@ -68,19 +91,45 @@ const createAppointment = asyncHandler(async (req, res) => {
   sendSuccess(res, 201, populated, 'Meeting request sent.');
 });
 
-// PATCH /api/appointments/:id/status (mentor/counselor/admin) - accept/reject/reschedule/complete
+// PATCH /api/appointments/:id/status (mentor/counselor/admin, or student cancel)
 const updateAppointmentStatus = asyncHandler(async (req, res) => {
   const { status, confirmedDate, notes } = req.body;
-  const validStatuses = ['Confirmed', 'Completed', 'Cancelled', 'Rejected'];
-  if (!validStatuses.includes(status)) {
-    throw new ApiError(400, `status must be one of: ${validStatuses.join(', ')}`);
-  }
 
   const appointment = await Appointment.findById(req.params.id).populate('student', 'user studentCode');
   if (!appointment) throw new ApiError(404, 'Appointment not found.');
 
+  const isStudentRequester = req.user.role === 'student' &&
+    (String(appointment.requestedBy) === String(req.user._id) || String(appointment.student?.user) === String(req.user._id));
+
   if (req.user.role !== 'admin' && String(appointment.withUser) !== String(req.user._id)) {
-    throw new ApiError(403, 'You may only manage appointments addressed to you.');
+    if (!(status === 'Cancelled' && isStudentRequester)) {
+      throw new ApiError(403, 'You may only manage appointments addressed to you.');
+    }
+  }
+
+  // Enforce controlled appointment state machine
+  const currentStatus = appointment.status;
+  const allowedTransitions = INSTITUTIONAL_RULES.APPOINTMENTS.VALID_STATUS_TRANSITIONS[currentStatus] || [];
+  if (!allowedTransitions.includes(status)) {
+    throw new ApiError(400, `Invalid status transition: cannot transition appointment from "${currentStatus}" to "${status}".`);
+  }
+
+  // Detect schedule conflicts when confirming
+  if (status === 'Confirmed' || (confirmedDate && status !== 'Cancelled' && status !== 'Rejected')) {
+    const checkDate = new Date(confirmedDate || appointment.confirmedDate || appointment.preferredDate);
+    const windowMs = INSTITUTIONAL_RULES.APPOINTMENTS.CONFLICT_WINDOW_MINUTES * 60 * 1000;
+    const conflict = await Appointment.findOne({
+      _id: { $ne: appointment._id },
+      withUser: appointment.withUser,
+      status: 'Confirmed',
+      confirmedDate: {
+        $gte: new Date(checkDate.getTime() - windowMs),
+        $lte: new Date(checkDate.getTime() + windowMs),
+      },
+    });
+    if (conflict) {
+      throw new ApiError(409, `Schedule conflict: A confirmed appointment already exists within ${INSTITUTIONAL_RULES.APPOINTMENTS.CONFLICT_WINDOW_MINUTES} minutes of this time slot.`);
+    }
   }
 
   appointment.status = status;
@@ -90,11 +139,11 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
 
   await logAudit({
     actor: req.user, action: 'AppointmentStatusChanged', targetType: 'Appointment', targetId: appointment._id,
-    details: `status -> ${status}`,
+    details: `status: ${currentStatus} -> ${status}`,
   });
 
   const studentUserId = appointment.student?.user;
-  if (studentUserId) {
+  if (studentUserId && String(studentUserId) !== String(req.user._id)) {
     await notify({
       user: studentUserId, type: 'General', relatedStudent: appointment.student._id,
       message: `Your meeting request was marked "${status}".`,

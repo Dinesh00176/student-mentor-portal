@@ -10,8 +10,8 @@ const { createAcademicValidators } = require('../validators/academic.validators'
 const router = express.Router();
 
 router.get('/student/:studentId', verifyToken, getStudentAcademics);
-router.post('/', verifyToken, requireRole('admin', 'mentor'), createAcademicValidators, validate, createAcademicRecord);
-router.put('/:id', verifyToken, requireRole('admin', 'mentor'), updateAcademicRecord);
-router.delete('/:id', verifyToken, requireRole('admin', 'mentor'), deleteAcademicRecord);
+router.post('/', verifyToken, requireRole('mentor'), createAcademicValidators, validate, createAcademicRecord);
+router.put('/:id', verifyToken, requireRole('mentor'), updateAcademicRecord);
+router.delete('/:id', verifyToken, requireRole('mentor'), deleteAcademicRecord);
 
 module.exports = router;
